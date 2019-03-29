@@ -26,22 +26,21 @@ def parse(source, destination, date, delta):
             # print(url)
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36'}
             response = requests.get(url, headers=headers, verify=False)
-            sleep(randint(1,3))
-            #print(response.headers['content-type'])
-            #print(type(response.content))
-            if(response.status_code==200):
+            # print(response.headers['content-type'])
+            # print(type(response.content))
+            sleep(10)
+            if(response.status_code == 200):
                         
                 parser = html.fromstring(response.content)
             
                 json_data_xpath = parser.xpath("//script[@id='cachedResultsJson']//text()")
-            
+                print("1")
                 input_string = json_data_xpath[0]
-            
-            
+                print(input_string)
                 raw_json = json.loads(input_string if input_string else '')
             
                 flight_data = json.loads(raw_json["content"])
-                #print("5")
+                
                 flight_info = OrderedDict() 
                 lists = []
     
@@ -124,12 +123,10 @@ def parse(source, destination, date, delta):
                     lists.append(flight_info)
                 sortedlist = sorted(lists, key=lambda k: k['ticket_price'], reverse=False)
                 return sortedlist
-        
-        
             else:
-                print("error")
+                print("no response")
                 print(response.status_code)
-                
+                print(response.content)
         except Exception as e:
             print(repr(e))
 
@@ -180,37 +177,44 @@ def beautify(file):
 
 if __name__ == "__main__":
     
-    source = "yto"
-    dest_list = ['yhz', 'ymq', 'lon', 'lga', 'lhr', 'ord','yvr']
-    # dest_list = ['yto']
-    today = datetime.datetime.today().strftime("%m_%d")
-    day = datetime.datetime.today()
-    dttm = datetime.datetime.today().strftime("%m_%d_%H")
-                    
-    day_input = int(sys.argv[1])
-    mon_input= int(sys.argv[2])
-    
-    print(day_input)
-    print(mon_input)
-    # Range of dates in which we want the data
-    a = date(2019, mon_input, day_input)   
-    b = date(2019, 6, 30)
-    
-    for destination in dest_list:
+    try:
+        source = "yhz"
+        dest_list = ['yto', 'yul', 'yyt', 'yow', 'yyc', 'yhm', 'lhr', 'yqy']
+        # dest_list = ['yto']
+        today = datetime.datetime.today().strftime("%m_%d")
+        day = datetime.datetime.today()
         
-        for dt in rrule(DAILY, dtstart=a, until=b):
-            delta = dt - day
-            delta = delta.days
-            sleep(randint(0, 2))
-            dept_date = str(dt.strftime("%m/%d/%Y"))
-            print ("Fetching flight details for route " + source + " - " + destination + " of " + dept_date)
-            scraped_data = parse(source, destination, dept_date, delta)
-            
-            print ("Writing " + source + "-" + destination + " for date " + dept_date + " data.")
-            if scraped_data is not None:
-                with open('C:\\Users\\Meghashyam\\Documents\\GitHub\\My_Projects\\Flight-Price-Scrapper\\Results\\%s-flight-results.json' % (str(dttm)), 'a+') as fp:
-                    json.dump(scraped_data, fp, indent=4)     
-    file = "Results\\" +"-" + str(dttm) + "-flight-results.json"  
-    replace(file)
-    beautify(file)
-    print("bye")
+        # input = sys.argv[1]
+        # Range of dates in which we want the data
+        a = date(2019, 3, 30)   
+        b = date(2019, 6, 30)
+        
+        for destination in dest_list:
+            sleep(randint(0, 5))
+            for dt in rrule(DAILY, dtstart=a, until=b):
+                delta = dt - day
+                delta = delta.days
+                sleep(randint(0, 3))
+                dept_date = str(dt.strftime("%m/%d/%Y"))
+                print ("Fetching flight details for route " + source + " - " + destination + " of " + dept_date)
+                scraped_data = parse(source, destination, dept_date, delta)
+                
+                if scraped_data is not None:
+                    
+                    #writepath = "/usr/MeghashyamResults/" + str(source) + "-" + str(today) + "-flight-results.json"
+                    path = os.path.join(os.path.expanduser('~'), 'Results', 'file.json')
+                    print(path)
+                    mode = 'a' if os.path.exists(path) else 'w'
+                    print ("Writing " + source + "-" + destination + " for date " + dept_date + " data to output file")
+                
+                    with open(writepath, mode) as fp:
+                        json.dump(scraped_data, fp, indent=4)  
+                else:
+                    print("Data is null")   
+        file = "~/Results/" + str(source) + "-" + str(today) + "-flight-results.json"  
+        replace(file)
+        beautify(file)
+        print("bye")
+        
+    except Exception as e:
+        print(repr(e))
